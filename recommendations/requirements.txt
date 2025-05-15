@@ -1,0 +1,9 @@
+grpcio==1.60.0
+grpcio-tools==1.60.0
+protobuf>=4.21.6,<5.0dev
+six==1.16.0
+SQLAlchemy==2.0.25
+mysql-connector-python==8.2.0
+python-dotenv==1.0.0
+mysqlclient==2.2.4
+confluent-kafka==2.3.0

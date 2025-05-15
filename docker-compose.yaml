@@ -1,0 +1,106 @@
+version: "3.8"
+services:
+    mysql:
+        image: mysql:8.0
+        environment:
+            - MYSQL_ROOT_PASSWORD=soaproject
+            - MYSQL_DATABASE=movies
+            - MYSQL_USER=soaproject
+            - MYSQL_PASSWORD=soaproject
+        ports:
+            - "3306:3306"
+        volumes:
+            - mysql_data:/var/lib/mysql
+            - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+            - ./mysql/init_recommendations.sql:/docker-entrypoint-initdb.d/init_recommendations.sql
+        networks:
+            - microservices
+        command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "soaproject", "-psoaproject"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+
+    zookeeper:
+        image: confluentinc/cp-zookeeper:7.0.1
+        container_name: zookeeper
+        environment:
+            ZOOKEEPER_CLIENT_PORT: 2181
+            ZOOKEEPER_TICK_TIME: 2000
+        ports:
+            - "2181:2181"
+        networks:
+            - microservices
+
+    kafka:
+        image: confluentinc/cp-kafka:7.0.1
+        container_name: kafka
+        depends_on:
+            - zookeeper
+        ports:
+            - "9092:9092"
+        environment:
+            KAFKA_BROKER_ID: 1
+            KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+            KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092
+            KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+            KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+            KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+        networks:
+            - microservices
+
+    recommendations:
+        build:
+            context: .
+            dockerfile: recommendations/Dockerfile
+        ports:
+            - "50051:50051"
+        environment:
+            - PYTHONUNBUFFERED=1
+            - DATABASE_URL=mysql://soaproject:soaproject@mysql:3306/recommendations
+            - KAFKA_BROKER=kafka:9092
+        networks:
+            - microservices
+        depends_on:
+            mysql:
+                condition: service_healthy
+            kafka:
+                condition: service_started
+
+    catalog:
+        build:
+            context: .
+            dockerfile: catalog/Dockerfile
+        ports:
+            - "5000:5000"
+        environment:
+            - PYTHONUNBUFFERED=1
+            - RECOMMENDATIONS_HOST=recommendations
+            - DATABASE_URL=mysql://soaproject:soaproject@mysql:3306/movies
+            - SECRET_KEY=your-secret-key-here
+            - KAFKA_BROKER=kafka:9092
+        depends_on:
+            mysql:
+                condition: service_healthy
+            recommendations:
+                condition: service_started
+            kafka:
+                condition: service_started
+        networks:
+            - microservices
+
+networks:
+    microservices:
+
+volumes:
+    mysql_data:
+    mysql_recommendations_data:
+        driver: local

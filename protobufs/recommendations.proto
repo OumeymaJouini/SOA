@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+package recommendations;
+
+enum MovieCategory {
+  ACTION = 0;
+  COMEDY = 1;
+  HORROR = 2;
+  SCIENCE_FICTION = 3;
+}
+
+message RecommendationRequest {
+  int32 user_id = 1;
+  MovieCategory category = 2;
+  int32 max_results = 3;
+}
+
+message MovieRecommendation {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string genre = 4;
+  double rating = 5;
+  string release_year = 6;
+}
+
+message RecommendationResponse {
+  repeated MovieRecommendation recommendations = 1;
+}
+
+// Catalog service definition
+service Catalog {
+  rpc CreateMovie(CreateMovieRequest) returns (Movie) {}
+  rpc GetMovie(GetMovieRequest) returns (Movie) {}
+  rpc UpdateMovie(UpdateMovieRequest) returns (Movie) {}
+  rpc DeleteMovie(DeleteMovieRequest) returns (DeleteMovieResponse) {}
+  rpc ListMovies(ListMoviesRequest) returns (ListMoviesResponse) {}
+}
+
+message Movie {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string genre = 4;
+  double rating = 5;
+  string release_year = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message CreateMovieRequest {
+  string title = 1;
+  string description = 2;
+  string genre = 3;
+  double rating = 4;
+  string release_year = 5;
+}
+
+message GetMovieRequest {
+  string id = 1;
+}
+
+message UpdateMovieRequest {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string genre = 4;
+  double rating = 5;
+  string release_year = 6;
+}
+
+message DeleteMovieRequest {
+  string id = 1;
+}
+
+message DeleteMovieResponse {
+  bool success = 1;
+}
+
+message ListMoviesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string genre = 3;
+}
+
+message ListMoviesResponse {
+  repeated Movie movies = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// New messages for preferences
+message Preference {
+  int32 user_id = 1;
+  string keyword = 2;
+}
+
+message CreatePreferenceRequest {
+  int32 user_id = 1;
+  string keyword = 2;
+}
+
+message GetPreferencesRequest {
+  int32 user_id = 1;
+}
+
+message GetPreferencesResponse {
+  repeated Preference preferences = 1;
+}
+
+message DeletePreferenceRequest {
+  int32 user_id = 1;
+  string keyword = 2;
+}
+
+message DeletePreferenceResponse {
+  bool success = 1;
+}
+
+// New message for film updates from catalog service
+message FilmUpdate {
+  string film_id = 1;
+  string title = 2;
+  string description = 3;
+  string genre = 4;
+  repeated string keywords = 5;  // Keywords extracted from title, description, genre
+  double rating = 6;             // Added rating
+  string release_year = 7;       // Added release_year
+}
+
+message FilmUpdateResponse {
+  bool success = 1;
+}
+
+// Update the Recommendations service
+service Recommendations {
+  rpc GetRecommendations(RecommendationsRequest) returns (RecommendationsResponse) {}
+  
+  // New RPCs for preferences
+  rpc CreatePreference(CreatePreferenceRequest) returns (Preference) {}
+  rpc GetPreferences(GetPreferencesRequest) returns (GetPreferencesResponse) {}
+  rpc DeletePreference(DeletePreferenceRequest) returns (DeletePreferenceResponse) {}
+  
+  // New RPC for film updates
+  rpc ProcessFilmUpdate(FilmUpdate) returns (FilmUpdateResponse) {}
+}
+
+message RecommendationsRequest {
+  string user_id = 1;
+  int32 max_results = 2;
+}
+
+message RecommendationsResponse {
+  repeated MovieRecommendation recommendations = 1;
+}

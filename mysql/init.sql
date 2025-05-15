@@ -1,0 +1,4 @@
+CREATE DATABASE IF NOT EXISTS movies;
+CREATE USER IF NOT EXISTS 'soaproject'@'%' IDENTIFIED BY 'soaproject';
+GRANT ALL PRIVILEGES ON movies.* TO 'soaproject'@'%';
+FLUSH PRIVILEGES; 

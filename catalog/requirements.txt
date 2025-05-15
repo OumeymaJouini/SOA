@@ -1,0 +1,13 @@
+Flask-WTF==1.2.1
+SQLAlchemy==2.0.25
+psycopg2-binary
+mysqlclient==2.2.4
+python-dotenv==1.0.0
+grpcio
+grpcio-tools
+protobuf>=4.21.6,<5.0dev
+confluent-kafka==2.3.0
+Flask==3.0.2
+Flask-SQLAlchemy==3.1.1
+
+
